@@ -13,7 +13,7 @@ The **HepMC3**, **GSL** and **ROOT** libraries are required to compile the code.
 
 Assuming you have those, execute bash script make_bremge.sh provided in the scripts directory:
 
- bash: ./scripts/make_bremge.sh
+ bash: `./scripts/make_bremge.sh`
  
  
 This, if done successfully, creates executable ** bremgenC ** , and puts it into created bin directory. 
