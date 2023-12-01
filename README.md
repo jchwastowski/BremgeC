@@ -4,7 +4,7 @@ It is based on the original Bremge written in Fortran in 1991 for simulation of 
 The detail informationon the Bremge and physics ground can be found in sub-directory doc. 
 Recently BremgeC is used for development of the luminosity detector (LumiDirectPCal) part of the EIC project detector.
 
-** 1. Overview. **
+*** 1. Overview. ***
 
 ........ to be filled
 
