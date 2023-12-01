@@ -2,9 +2,9 @@ BremgeC is a generator of bremsstrahlung events in ep (electron-proton) and eA (
 ported to C++.
 It is based on the original Bremge written in Fortran in 1991 for simulation of luminosity detector at HERA/DESY.
 The detail informationon the Bremge and physics ground can be found in sub-directory doc. 
-Recently BremgeC is used for development of the luminosity detector (LumiDirectPCal) part of the EIC project detector.
+Recently BremgeC is used for development of the luminosity detector (LumiDirectPCal) part of the EIC project detector
 
-# 1.Overview.
+# 1. Overview
 ........ to be filled
 
 # 2. Compilation.
@@ -19,8 +19,9 @@ Assuming you have those, execute bash script make_bremge.sh provided in the scri
 This, if done successfully, creates executable ** bremgenC ** , and puts it into created bin directory. 
 The script takes one command line argument 0/1/2/3. 
 For general purpose flag 0 or equivalently none can be provided, flags 1,2 and 3 are for special use.  
- 
-# 3. Runnig bremgeC.
+
+======
+# 3. Runnig bremgeC
 
 The executable bremgenC takes up to four command line arguments:
 
