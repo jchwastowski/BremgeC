@@ -12,10 +12,10 @@ Recently BremgeC is used for development of the luminosity detector (LumiDirectP
 
 The ** HepMC3, GSL ** and **ROOT** libraries are required to compile the code. 
 
-Assuming you have those, execute bash script provided here:
+Assuming you have those, execute bash script make_bremge.sh provided in the scrits directory:
 
- ```bash: ./scripts/make_bremge.sh
- ```
+ bash: ./scripts/make_bremge.sh
+ 
  
 This, if done successfully, creates executable ** bremgenC ** , and puts it into created bin directory. 
 The script takes one command line argument 0/1/2/3. 
