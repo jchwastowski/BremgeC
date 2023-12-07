@@ -20,9 +20,9 @@ of the beams. It is simulated by suppressing events with small momentum transfer
 2. M. van der Horst, Theoretical Calculation for Electron-Proton Scattering, Ph. D. thesis, U. Amsterdam, 1990;
    L.J.G. Gaemers and M. van der Hosrt, Nucl. Phys. B316 (1989) 269;
    M. van der Horst, Nucl. Phys. B347 (1990) 149 and Phys. Lett. B244 (1990) 07.
-3. A. A. Akhundov et al., Electron-State Bremsstranlung Process ep->\gamma ep(X) at HERA, DESY-90-130.
+3. A. A. Akhundov et al., Electron-State Bremsstranlung Process ep->γep(X) at HERA, DESY-90-130.
 4. Y-S. Tsai, Pair Production and Bremsstrahlung of Charged Leptons, Rev. of Modern Phys. 46 (1974) 815.
-5. G.L. Kotkin et al., Influence of the Transverse Beam Sizes on the ep→epγep→epγ Cross-section at the {HERA} 
+5. G.L. Kotkin et al., Influence of the Transverse Beam Sizes on the ep→epγ Cross-section at the HERA 
    and a Future {CERN} Electron-Proton Collider, Z. Phys. C39 (1988) 61. 
 
 
