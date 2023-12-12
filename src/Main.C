@@ -42,6 +42,10 @@ int main(int argc, char **argv) {
   double p_beam = 275.;
   double e_photon_min = 0.1 ;
   double e_photon_max = 9.99;   
+
+  double K_photon_max = (1.0-e_mass/e_beam*e_mass/e_beam)*e_beam;   
+  e_photon_max = min(e_photon_max,K_photon_max);
+
   int seed_mode = -1;
   int Nevents = 100;
   double tgmax  = 0.001;       // default theta_max of the bremstrahlung photon
@@ -50,11 +54,11 @@ int main(int argc, char **argv) {
     printf("\t Usage: %s :  <number_of_events> <HepMC3_output_file> <photon_theta_max> <generator_seed>\n",Me.c_str());
     printf("\t\t\t       -  <number_of_events>       obligatory \n"); 
     printf("\t\t\t       -  <HepMC3_output_file>     obligatory \n");
-    printf("\t\t\t       -  <photon_theta_max>       optional photon theta_max, if ommitted default = 0.001 [radian] \n");
     printf("\t\t\t       -  <generator_seed>         optional may have three values (default is -1) : \n");
     printf("\t\t\t                             if = 0 -> Start ranlux with the default seed \n"); 
-    printf("\t\t\t                             if > 0 -> Seed ranlux with default given seed \n");
+    printf("\t\t\t                             if > 0 -> Seed ranlux with user given seed \n");
     printf("\t\t\t                             if < 0 -> or ommited use seed saved in previous run in file %s \n",LastSeedFile.c_str());
+    printf("\t\t\t       -  <photon_theta_max>       optional photon theta_max, if ommitted default = 0.001 [radian] \n");
     printf("                        ===========================================================================================\n");
     exit(-1);
   }else if(argc==3) {
@@ -73,7 +77,7 @@ int main(int argc, char **argv) {
 	<< endl;
     Nevents = atoi(argv[1]);
     tgmax = atof(argv[3]);
-  }else if(argc==5){    
+     }else if(argc==5){    
     cout<<"\n\n\t"<<argv[0]<<" called for\t"<<argv[1]<<" events\n "
 	<<"\t\t output file: "<<argv[2]
 	<<"\n\t\t max. photon theta:"<<argv[3]
@@ -86,12 +90,11 @@ int main(int argc, char **argv) {
     cout<<"\n\n\t Error!!! "<<argv[0]<<" called with more than four parameters. argc = "<<argc-1<<"\n ";
     exit(1);
   }
-
   /* 
-     Brem * b = new Brem(e_beam, p_beam,
-     e_photon_min, e_photon_max,
-     seed, output_name,
-     tgmax);
+  Brem * b = new Brem(e_beam, p_beam,
+                      e_photon_min, e_photon_max,
+                      seed, output_name,
+                      tgmax);
   */
   std::string output_name( argv[2] );
   
