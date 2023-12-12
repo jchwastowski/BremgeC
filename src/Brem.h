@@ -6,10 +6,13 @@ references:
    Proc. of the Physics at HERA Workshop, eds. W. Buchmueller and G. Ingelman
    Hamburg, Oct. 29-30, 1991, p.1463
  - C++ implentation: 
-       authors: J. J. Chwastowski, IFJ PAN, Krakow, Poland
+       authors: 
+                J. J. Chwastowski, IFJ PAN, Krakow, Poland
                 Janusz.Chwastowski@ifj.edu.pl
+		   initital prot
 		B. Pawlik, AGH University of Krakow, Krakow, Poland
                 pawlik.bogdan@gmail.com
+		   intitial port+ HEPMC3, Root, ...
 */
 #include <ctime>
 #include <iostream>
@@ -73,14 +76,17 @@ private:
   int      ntry;           //  number of iterations
   double   Q2;             //  Q^2 of the bremsstrahlung process
   
+  double SigTot;     // Bremge calculated cross-section
+  // internal
   // Lorentz gammas of the proton, electron and the scattered electron
   double gamma_p0;
   double gamma_e0;
   double gamma_e;
-  double SigTot;     // Bremge calculated cross-section
-  // internal
   double delta, delta_max, delta_pr, d2_min, d2_max, du3;
-  double Eg, tgx, tgy, gth, Ee, tex, tey, eth;
+  // Bremge output
+  double Eg, tgx, tgy, gth;  // gamma
+  double Ee, tex, tey, eth;  // electron-out
+  double Ep, tpx, tpy, pth;  // proton-out
   double mDET_POSITION;                        // distance to the face of epic LumiDirectPC detector [mm]
   double xpos, ypos, zpos;                     // radiated photon position (x, y) at mDET_POSITION
   double x_ep, y_ep, x2_ep, y2_ep, xy2_ep;     // beam size
@@ -88,7 +94,7 @@ private:
   double Z13, BE12, BE22, BE32, SCRMAX;
   double fGeGp;                                // factor containing the Lorentz gammas
   // auxiliaries
-  double Ehl, SCR,  EBound[2], DsDuma;
+  double EHL, SCR,  EBound[2], DsDuma;
   TLorentzVector gamma_vec;
   gsl_rng *r;
   GenEvent hepevt;
@@ -196,7 +202,7 @@ public:
     else {
       fGeGp = 4.0*gamma_e0*gamma_p0;
     }
-    Ehl = log(Eg_max/Eg_min);
+    EHL = log(Eg_max/Eg_min);
     SCR = 1.0;
     
     rootfile=nullptr;
@@ -206,8 +212,8 @@ public:
     //
     const gsl_rng_type * T;
     gsl_rng_env_setup();
-    T = gsl_rng_default;
-    T = gsl_rng_ranlux; 
+    //T = gsl_rng_ranlux; 
+    T = gsl_rng_ranlxd2; 
     r = gsl_rng_alloc (T);
     
     // get today in form last dof the year and the number this might be eg 23001 (first day of 2023)   
@@ -224,11 +230,14 @@ public:
     if( instrm.is_open() ){
       instrm >> RunNumber >> Seed ;
       instrm.close();
-      if ( RunNumber/1000 == mDate ) { RunNumber++; RunNumberStr = TString( to_string(RunNumber)); RunNumberStr.Prepend("run");}     
-    } else {
+      if ( RunNumber/1000 == mDate ) { RunNumber++; RunNumberStr = TString( to_string(RunNumber)); RunNumberStr.Prepend("run");
+      }else{ 
+ 	RunNumber  = mDate*1000;
+	RunNumberStr = TString( to_string(RunNumber) ); RunNumberStr.Prepend("run");
+      }
+   } else {
 	RunNumber  = mDate*1000;
-	RunNumberStr = TString( to_string(RunNumber) );
-	set_Seed(0);
+	RunNumberStr = TString( to_string(RunNumber) ); RunNumberStr.Prepend("run");
 	cout<<"\t Brem::Brem: new LastRunInfo.txt will be created on exit. \n";
     }
 
@@ -240,7 +249,7 @@ public:
       cout<<"\n\t Brem::Brem: Seed_Mode "<<Seed_Mode<<" ranlux seeded with:\t"<< gsl_rng_get(r) <<"\t user given seed, not saved "<<endl;      
     }else if( Seed_Mode > 0) {
       set_Seed( Seed_Mode );
-      cout<<"n\t Brem::Brem: Seed_Mode "<<Seed_Mode<<" ranlux seeded with:\t"<< gsl_rng_get(r) <<"\t user given seed, not saved "<<endl;  
+      cout<<"n\t Brem::Brem: Seed_Mode "<<Seed_Mode<<" ranlux seeded with:\t"<<  gsl_rng_get(r) <<"\t user given seed, not saved "<<endl;  
     }
        
     //
@@ -249,6 +258,8 @@ public:
     outname_root=TString(outname);
     int pos1 = outname_root.Last('/')+1;
     int pos2 = outname_root.Last('.');
+    if(pos2<0) outname_root.Append(".");
+    pos2 = outname_root.Last('.');
     TString dir = TString( outname_root(0, pos1));
     outname_root = TString( outname_root(pos1,pos2-pos1));      				     
     outname_root.Prepend(RunNumberStr + "_");
@@ -274,6 +285,11 @@ public:
       rootfile = new TFile(outname_root,"RECREATE");
       
       BremTree = new TTree("BremTree", "bremstrahlung ep events e_beam=10GeV pbeam=275GeV photon_theta_max=0.001[rad]");      
+      BremTree->Branch("pr_en",&Ep);
+      BremTree->Branch("pr_thx",&tpx);
+      BremTree->Branch("pr_thy",&tpy);
+      BremTree->Branch("pr_theta",&pth);
+      
       BremTree->Branch("el_en",&Ee);
       BremTree->Branch("el_thx",&tex);
       BremTree->Branch("el_thy",&tey);
@@ -282,20 +298,22 @@ public:
       BremTree->Branch("phot_en",&Eg);
       BremTree->Branch("phot_thx",&tgx);
       BremTree->Branch("phot_thy",&tgy);
-      BremTree->Branch("phot_theta",&gth);
-      
+      BremTree->Branch("phot_theta",&gth);      
       BremTree->Branch("phot_posx",&xVTX);
       BremTree->Branch("phot_posy",&yVTX);
       
+      BremTree->Branch("qsqr",&Q2);
+      BremTree->Branch("n_iter",&ntry);
+      
       double thmax = Tg_max*1000. ; //radians to miliradians
-      hphot_en      = new TH1D ("hphot_en", "brem photon energy; E_{photon}/E_{electron beam}; N_{evt}" , 105, 0., 1.05);
+      hphot_en      = new TH1D ("hphot_en", "brem photon energy; E_{#gamma}/E_{e}^{beam}; N_{evt}" , 105, 0., 1.05);
       hphot_theta   = new TH1D ("hphot_theta", "brem photon polar angle; #theta_{#gamma} [mrad]; N_{evt}" , 100, 0., thmax);
       hphot_edepxy  = new TH2D ("hphot_edepxy","EdepXY;X [mm];Y [mm]",240,-120.,120.,240,-120.,120.);
-      hphot_thxthy = new TH2D ("hphot_thxthy","EdepThxThy;#theta_{X} [mrad];#theta_{Y} [mrad]",200,-thmax,thmax,200,-thmax,thmax);
+      hphot_thxthy  = new TH2D ("hphot_thxthy","EdepThxThy;#theta_{X} [mrad];#theta_{Y} [mrad]",200,-thmax,thmax,200,-thmax,thmax);
       hphot_en->Sumw2();
       hphot_theta->Sumw2();
    
-      hele_en      = new TH1D ("hele_en", "out electron energy; E_{electron_out/E_{electron beam}; N_{evt}" , 105, 0., 1.05);
+      hele_en      = new TH1D ("hele_en", "out electron energy; E_{e}^{out}/E_{e}^{beam}; N_{evt}" , 105, 0., 1.05);
       hele_theta   = new TH1D ("hele_theta", "out electron polar angle; #theta [mrad]; N_{evt} " ,100,0.,thmax ); 
       hele_en->Sumw2();
       hele_theta->Sumw2();
@@ -316,18 +334,18 @@ public:
       double EE0EE = E_e0/Ee;
       double WE;
       if(ModeBr==2) {
-	WE = (E_e0/(E_e0-Eg)+(E_e0-Eg)/E_e0-2./3.)*
-	  (Z_gas*Z_gas*log(184./pow(Z_gas,1./3.))
+	WE = (EE0EE + 1./EE0EE -2./3.)*
+	  ( pow(Z_gas,2)*log(184./pow(Z_gas,1./3.))
            +Z_gas*log(1194./pow(Z_gas,2./3.)))
-	  +Z_gas*(Z_gas+1.0)/9.0;
+	   +Z_gas*(Z_gas+1.0)/9.0;
       }
       else {
-	WE = (E_e0/(E_e0-Eg)+(E_e0-Eg)/E_e0-2./3.)*(log(fGeGp*Ee/Eg)-1./2.);
+	WE = (EE0EE + 1./EE0EE - 2./3.)*(log(fGeGp*Ee/Eg) - 0.5);
       }
-      double ds = 4*ALR2MB*WE*(E_e0-Eg)/E_e0;
+      double ds = 4*ALR2MB*WE/EE0EE;
       SigTot += ds;
     }
-    SigTot = SigTot*log(Eg_max/Eg_min)/2.0;
+    SigTot = SigTot*EHL/2.0;
 
     /*
     set the density cut to 10.*SigTot: approx. 10% efficienncy of the generator
@@ -342,26 +360,31 @@ public:
   int Bremge(double &Eg, double &tgx, double &tgy, double &Ee, double &tex, double &tey) {
     /*
       bremge output:
-      returns gives the  number of the iterations
+      -returns gives the  number of the iterations
+      -pgz, pgy, pgz are the components of the photon momentum <<--------- to nie jest prawda
+
       Eg  - the photon energy
-      tgx - arctan(pgx/pgz), wher pgz, pgy, pgz are the components of the photon momentum
+      tgx - arctan(pgx/pgz)
       tgy - arctan(pgy/pgz)
       Ee  - the scattered electron energy
       tex - arctan(pex/pez)
       tey - arctan(pey/pez)
+
+      Generate BREMS event using random variables U1, U2, U3, U4 in unit
+      hypercube, where the BREMS  cross section dsigma/d4u is nicely flat
     */
     ntry = 0;
-    while(1) {
+    while( true ) {
       ntry++;
 
       // get the photon and electron energies
 
       double u1 = unif();
-      Eg = Eg_min*exp(u1*log(Eg_max/Eg_min));
+      Eg = Eg_min*exp(u1*EHL);
       Ee = E_e0-Eg;
 
-      double EgEe = Eg/(Ee);
-      double XI2 = Eg*EgEe/E_e0/2.0;
+      double EgEe = Eg/Ee;
+      double XI2  = 0.5*Eg*EgEe/E_e0;
       gamma_e =(Ee)/e_mass;
 
       /* 
@@ -391,7 +414,8 @@ public:
       double u4 = unif();
       double DDPR= Dfifim*tan(u4*(BU1+AU1)-AU1);
       double DDPR2 = DDPR*DDPR;
-      double YAFIU = log(Eg_max/Eg_min)*d21*d21*Pifim*(AU1+BU1)*(Dfifim*Dfifim+DDPR2)/(2.*(1.+d2_min)*delta*delta*du3);
+      double YAFIU = EHL*d21*d21*Pifim*(AU1+BU1)
+	*(Dfifim*Dfifim+DDPR2)/(2.*(1.+d2_min)*delta*delta*du3);
       /*
 	now calculate dSigma/(dFi dTh_e dTh_g dE_g)
       */
@@ -404,50 +428,54 @@ public:
       double WW0 = DDPR*(1.-DMDPR)/DDPR21;
       WW0 = WW0*WW0+XI2*DDPR2/DDPR21;
       double WW1 = (1+XI2)/DDPR21;
-      double WFI = DMDPR*2.*(1.-cos(Fi));
-      if(Fi<=0.01) {
-	double WFI = DMDPR*Fi*Fi;
-      }
-      Q2M2 = Q2M2+WFI;
+      double WFI;
+      if( Fi<=0.01 ) {
+	WFI = DMDPR*Fi*Fi;
+      } else {
+	WFI = DMDPR*2.*(1.-cos(Fi));
+      }	
       /*
        process Q2
       */
+      Q2M2 = Q2M2+WFI;
       Q2 = Q2M2*e_mass*e_mass;
       double Q2TR = WFI+DDPR2;
+      
       if(ModeBr==2) {
 	double SCR = Q2M2* (AL1/(BE12+Q2M2)+AL2/(BE22+Q2M2)+AL3/(BE32+Q2M2));
 	SCR = SCR*SCR;
 	u1 = unif();
 	if(u1*SCRMAX>SCR) continue;
       }
+      
       double DSDFI = AR28PI*DMDPR*(WW0+WW1*WFI)/Q2M2/Q2M2;
-      double DSDU = DSDFI*2.*Ee/E_e0*YAFIU;
+      double DSDU  = 2.*DSDFI*Ee/E_e0*YAFIU;
       u1 = unif();
       if(DSDU<DsDuma*u1) continue;
+      
       double TG = delta/gamma_e0;
       double TE = delta_pr/gamma_e;
-      double TX = TE*sin(Fi);
-      if(unif()>0.5) TX = -TX;
+      double TX = (unif()>0.5)? -TE*sin(Fi) : TE*sin(Fi) ;
       double TY =-TE*cos(Fi)+TG;
 
       double PHI = 2.*M_PI*unif();
       double CPHI = cos(PHI);
       double SPHI = sin(PHI);
       tgx = -TG*SPHI;
-      tgy = TG*CPHI;
-      tex = TX*CPHI-TY*SPHI;
-      tey = TX*SPHI+TY*CPHI;
+      tgy =  TG*CPHI;
+      tex =  TX*CPHI-TY*SPHI;
+      tey =  TX*SPHI+TY*CPHI;
       /* beam-size effect */
       if(ModeBr==1) {
         double FEXP=(x2_ep*CPHI*CPHI+y2_ep*SPHI*SPHI)/(xy2_ep*Q2TR);
 	if(FEXP>30) {
 	  Ee = 0.;
-	  return(0);
+	  return(ntry);
 	}else {
-	  if(unif()<exp(-FEXP)) return(0);
+	  if(unif()<exp(-FEXP))	    return(ntry);
 	}
       }
-      return(0);
+      return(ntry);
     }
   }
   //
@@ -455,7 +483,7 @@ public:
   void Brem_Event_HepMC3() {
     
     int j = Bremge(Eg, tgx, tgy, Ee, tex, tey);
-
+  
     hepevt = GenEvent(Units::GEV,Units::MM);
     // proton in
     double p_pz = sqrt(get_E_p0()*get_E_p0()-p_mass*p_mass);
@@ -470,14 +498,12 @@ public:
     lepton_in[2] = e_pz;
     lepton_in[3] = get_E_e0();
     // bremsstrahlung photon
-#ifdef BEAM_SPREAD_THETA
+    double COSTH_PHOT;
+#ifdef BEAM_DIVERGENCY_ON
     tgx += gaus();
     tgy += gaus();
-    //    double COSTH_PHOT =1./sqrt(1.+tan(tgx)*tan(tgx)+tan(tgy)*tan(tgy));
-    //#else
 #endif
-    double COSTH_PHOT =1./sqrt(1.+tan(tgx)*tan(tgx)+tan(tgy)*tan(tgy));
-    //#endif
+    COSTH_PHOT =1./sqrt(1.+tan(tgx)*tan(tgx)+tan(tgy)*tan(tgy));
     double g_pz = -Eg*COSTH_PHOT;
     double g_px =  g_pz*tan(tgx);
     double g_py =  g_pz*tan(tgy);
@@ -540,7 +566,11 @@ public:
     proton_out[1] = proton_in[1]+q[1];
     proton_out[2] = proton_in[2]+q[2];
     proton_out[3] = proton_in[3]+q[3];
-
+    Ep = proton_out[3];
+    tpx= atan(proton_out[0]/proton_out[2]);
+    tpy= atan(proton_out[1]/proton_out[2]);
+    pth= acos(1./sqrt(1.+ tpx*tpx + tpy*tpy ));
+    
     GenParticlePtr p1 = make_shared<GenParticle>( FourVector(proton_in[0],proton_in[1],proton_in[2],proton_in[3]),2212,  4 );
     GenParticlePtr p2 = make_shared<GenParticle>( FourVector(lepton_in[0],lepton_in[1],lepton_in[2],lepton_in[3]),  11,  4 );
     GenParticlePtr p3 = make_shared<GenParticle>( FourVector(q[0],   q[1], q[2], q[3]),  22,  3 ); //<-- virtual photon
@@ -565,16 +595,11 @@ public:
     GenVertexPtr v2 = make_shared<GenVertex>(FourVector(xVTX, yVTX, zVTX,0.0));
     v2->add_particle_in(p1);        //_out(p4); proton in
     v2->add_particle_out(p6);       //          proton out
+    v2->add_particle_out(p3);       //          q[]
     /*    v2->add_particle_out(p5);  */
     hepevt.add_vertex(v2);
 #endif
 
-#ifdef SAVE_P7
-    GenParticlePtr p7 = make_shared<GenParticle>(FourVector(get_Q2(),0.,(double)get_Ntry(),0.),22,3);
-    GenVertexPtr v3 = make_shared<GenVertex>();
-    v3->add_particle_out (p7);
-    hepevt.add_vertex(v3);
-#endif
     BremTree->Fill();
   }
   
@@ -593,8 +618,10 @@ public:
     end_Brem();
   }
   
-  void end_Brem(){    
+  void end_Brem(){
+    
     rootfile->cd();
+    /*
     BremTree->Write();
     hele_en->Write();
     hele_theta->Write();
@@ -602,6 +629,8 @@ public:
     hphot_theta->Write();
     hphot_edepxy->Write();
     hphot_thxthy->Write();
+    */
+    rootfile->Write();
     rootfile->Close();
     //
     ulong long sseed;  
