@@ -13,8 +13,8 @@ well below 1% [2, 3]. Also, the energy transfer to the target of the order of m_
 		E_{\gamma} + E'_{e} = E_{e,beam}
 In the case of the electron-nucleus bremsstrahlung the screening of the nucleus field by the atomic electrons is taken into account 
 by applying the Thomas-Fermi-Moliere form factor [4].
-The beam-size effect [5] is related to interactions with the large impact parameter value comparable to the transverse dimensions
-of the beams. It is simulated by suppressing events with small momentum transfer.
+The beam-size effect [5] is due to interactions with large impact parameter values comparable to the transverse dimensions
+of the beams. It is simulated in a simplified manner by suppressing events with small momentum transfer.
 
 1. V. B. Berestetskii, E. M. Lifshitz and L. P. Pitaevskii, Quantum Electrodynamics, Pergamon Press, 1971.
 2. M. van der Horst, Theoretical Calculation for Electron-Proton Scattering, Ph. D. thesis, U. Amsterdam, 1990;
