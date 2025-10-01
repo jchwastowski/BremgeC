@@ -8,7 +8,7 @@ Presently, BremgeC is used to develop the luminosity detector (LumiDirectPCal) p
 
 Bremsstrahlung events in the electron-proton collisions are generated according to the ultra-relativistic differential cross-section
 in Born and small-angle approximation [1]. Higher-order diagrams and inelastic contributions are neglected since they are
-well below 1% [2, 3]. Also, the energy transfer to the target of the order of m_e/M_target is neglected leading to the relation
+well below 1% [2, 3]. Also, a very small effect of the target recoil is neglected leading to the relation
 
 		E_{\gamma} + E'_{e} = E_{e,beam}
 In the case of the electron-nucleus bremsstrahlung the screening of the nucleus field by the atomic electrons is taken into account 
